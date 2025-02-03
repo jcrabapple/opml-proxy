@@ -1,13 +1,13 @@
-const fetch = require('node-fetch'); // You'll need to install this
+// functions/opml-proxy.js
+const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
   // Only allow requests from your domain
   const allowedOrigin = 'https://cool-as-heck.blog';
 
-  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
-      statusCode: 204, // No content needed for preflight
+      statusCode: 204,
       headers: {
         'Access-Control-Allow-Origin': allowedOrigin,
         'Access-Control-Allow-Headers': 'Content-Type',
@@ -16,17 +16,14 @@ exports.handler = async function(event, context) {
     };
   }
 
-  // Only allow GET requests
-  if (event.httpMethod !== 'GET') {
-    return {
-      statusCode: 405,
-      body: 'Method Not Allowed'
-    };
-  }
-
   try {
     const opmlUrl = 'https://www.inoreader.com/reader/subscriptions/export/user/1005679699/label/Blogroll';
     const response = await fetch(opmlUrl);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.text();
 
     return {
@@ -34,7 +31,7 @@ exports.handler = async function(event, context) {
       headers: {
         'Access-Control-Allow-Origin': allowedOrigin,
         'Content-Type': 'text/xml',
-        'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+        'Cache-Control': 'public, max-age=3600'
       },
       body: data
     };
